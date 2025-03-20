@@ -9,11 +9,14 @@ export default function LoginScreen() {
   const { login } = useAuth();
 
   const handleLogin = async () => {
+    console.log('Attempting login with:', { email, password });
     try {
       const response = await axios.post('http://192.168.100.16:3000/auth/login', { email, password });
+      console.log('Login response:', response.data);
       await login(response.data.userId, response.data.isAdmin, response.data.token);
       alert(response.data.isAdmin ? 'Admin Login Successful' : 'User Login Successful');
     } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
       alert('Login failed: ' + (error.response?.data?.error || error.message));
     }
   };

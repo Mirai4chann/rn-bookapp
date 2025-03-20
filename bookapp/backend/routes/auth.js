@@ -1,6 +1,15 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { login, register, updateProfile, saveToken, logout, getUser, cleanupStaleTokens, getAllUsers } = require('../models/user');
+const {
+  login,
+  register,
+  updateProfile,
+  saveToken,
+  logout,
+  getUser,
+  cleanupStaleTokens,
+  getAllUsers,
+} = require('../models/user');
 const router = express.Router();
 
 router.post('/login', (req, res) => {
@@ -17,10 +26,14 @@ router.post('/login', (req, res) => {
 });
 
 router.post('/register', (req, res) => {
-  const { email, password, name } = req.body;
-  register(email, password, name, (err) => {
-    if (err) return res.status(400).json({ error: 'Email already exists' });
-    res.json({ message: 'Registration successful' });
+  const { email, password, name, photo } = req.body;
+  console.log('Register request:', { email, password, name, photo });
+  register(email, password, name, photo, (err, userId) => {
+    if (err) {
+      console.error('Register error:', err);
+      return res.status(400).json({ error: 'Email already exists or invalid data' });
+    }
+    res.json({ message: 'Registration successful', userId });
   });
 });
 

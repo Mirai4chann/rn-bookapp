@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../App';
 
-export default function UserHomeScreen() {
+export default function UserHomeScreen({ navigation }) {
   const { logout } = useAuth();
 
   const handleLogout = async () => {

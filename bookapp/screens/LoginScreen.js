@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import axios from 'axios';
-import { useAuth } from '../App'; // Import useAuth from App.js
+import { useAuth } from '../App';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth(); // Access login function from context
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
-      console.log('Running LoginScreen.js');
       const response = await axios.post('http://192.168.100.16:3000/auth/login', { email, password });
-      console.log('Login response:', response.data);
       await login(response.data.userId, response.data.isAdmin, response.data.token);
       alert(response.data.isAdmin ? 'Admin Login Successful' : 'User Login Successful');
     } catch (error) {
-      console.error('Login error:', error);
       alert('Login failed: ' + (error.response?.data?.error || error.message));
     }
   };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../App';
 
 export default function AdminHomeScreen() {
@@ -21,7 +21,7 @@ export default function AdminHomeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Admin Dashboard</Text>
       <Text style={styles.text}>Welcome to your admin dashboard!</Text>
-      <Text style={styles.text}>Use the tabs below to view user list or update your profile.</Text>
+      <Text style={styles.text}>Use the tabs below to manage users, books, or update your profile.</Text>
       <Button title="Logout" onPress={handleLogout} />
     </View>
   );

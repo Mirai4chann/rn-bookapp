@@ -3,29 +3,41 @@ const path = require('path');
 const db = new sqlite3.Database(path.join(__dirname, '../../db/bookstore.db'));
 
 const initUsers = () => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE,
-      password TEXT,
-      name TEXT,
-      photo TEXT,
-      jwtToken TEXT,
-      isAdmin INTEGER DEFAULT 0
-    )
-  `, (err) => {
-    if (err) console.error('Error creating users table:', err);
-    else console.log('Users table ready');
+  db.serialize(() => {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        password TEXT,
+        name TEXT,
+        photo TEXT,
+        jwtToken TEXT,
+        isAdmin INTEGER DEFAULT 0
+      )
+    `, (err) => {
+      if (err) console.error('Error creating users table:', err);
+      else console.log('Users table ready');
+    });
+    db.run(`INSERT OR IGNORE INTO users (email, password, name, isAdmin) VALUES ('admin@bookstore.com', 'admin123', 'Admin', 1)`, (err) => {
+      if (err) console.error('Error inserting admin:', err);
+      else console.log('Admin user inserted or already exists');
+    });
   });
-  db.run(`INSERT OR IGNORE INTO users (email, password, name, isAdmin) VALUES ('admin@bookstore.com', 'admin123', 'Admin', 1)`);
 };
 
 const login = (email, password, callback) => {
   db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], callback);
 };
 
-const register = (email, password, name, callback) => {
-  db.run('INSERT INTO users (email, password, name, isAdmin) VALUES (?, ?, ?, 0)', [email, password, name], callback);
+const register = (email, password, name, photo, callback) => {
+  db.run(
+    'INSERT INTO users (email, password, name, photo, isAdmin) VALUES (?, ?, ?, ?, 0)',
+    [email, password, name, photo || null],
+    function (err) {
+      if (err) callback(err);
+      else callback(null, this.lastID);
+    }
+  );
 };
 
 const updateProfile = (id, data, callback) => {
@@ -57,4 +69,14 @@ const getAllUsers = (callback) => {
   db.all('SELECT id, email, name, isAdmin FROM users', [], callback);
 };
 
-module.exports = { initUsers, login, register, updateProfile, saveToken, logout, getUser, cleanupStaleTokens, getAllUsers };
+module.exports = {
+  initUsers,
+  login,
+  register,
+  updateProfile,
+  saveToken,
+  logout,
+  getUser,
+  cleanupStaleTokens,
+  getAllUsers,
+};

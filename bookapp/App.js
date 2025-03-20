@@ -6,9 +6,7 @@ import HomeNavigator from './navigators/HomeNavigator';
 import UserNavigator from './navigators/UserNavigator';
 import AdminNavigator from './navigators/AdminNavigator';
 
-// Create Auth Context
 const AuthContext = createContext();
-
 export const useAuth = () => useContext(AuthContext);
 
 export default function App() {
@@ -20,7 +18,6 @@ export default function App() {
         const userId = await AsyncStorage.getItem('userId');
         const isAdmin = await AsyncStorage.getItem('isAdmin');
         const jwtToken = await AsyncStorage.getItem('jwtToken');
-
         if (userId && jwtToken) {
           setUserState({ isLoggedIn: true, isAdmin: isAdmin === '1' });
         }
@@ -59,10 +56,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
 });

@@ -6,7 +6,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-const UserNavigator = () => {
+export default function UserNavigator() {
   return (
     <Tab.Navigator
       initialRouteName="UserHome"
@@ -20,9 +20,7 @@ const UserNavigator = () => {
         name="UserHome"
         component={UserHomeScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="home" color={color} size={30} />
-          ),
+          tabBarIcon: ({ color }) => <Icon name="home" color={color} size={30} />,
           headerShown: false,
         }}
       />
@@ -30,14 +28,10 @@ const UserNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="user" color={color} size={30} />
-          ),
+          tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
           headerShown: false,
         }}
       />
     </Tab.Navigator>
   );
-};
-
-export default UserNavigator;
+}

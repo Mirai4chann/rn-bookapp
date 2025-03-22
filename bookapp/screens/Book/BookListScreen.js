@@ -1,31 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, FlatList, Button, Image, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBooks, deleteBook } from '../../redux/books';
 
 export default function BookListScreen({ navigation }) {
-  const [books, setBooks] = useState([]);
+  const dispatch = useDispatch();
+  const { books } = useSelector((state) => state.books);
 
   useEffect(() => {
-    fetchBooks();
-  }, []);
+    dispatch(fetchBooks());
+  }, [dispatch]);
 
-  const fetchBooks = async () => {
-    try {
-      const response = await axios.get('http://192.168.100.16:3000/books');
-      setBooks(response.data);
-    } catch (error) {
-      console.error('Error fetching books:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://192.168.100.16:3000/books/${id}`);
-      alert('Book deleted successfully');
-      fetchBooks();
-    } catch (error) {
-      alert('Delete failed: ' + error.message);
-    }
+  const handleDelete = (id) => {
+    dispatch(deleteBook(id));
+    alert('Book deleted successfully');
   };
 
   const renderBook = ({ item }) => (

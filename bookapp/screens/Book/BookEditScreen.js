@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
+import { updateBook } from '../../redux/books';
 
 export default function BookEditScreen({ route, navigation }) {
   const { book } = route.params;
@@ -12,6 +13,7 @@ export default function BookEditScreen({ route, navigation }) {
   const [category, setCategory] = useState(book.category);
   const [description, setDescription] = useState(book.description || '');
   const [photo, setPhoto] = useState(book.photo || null);
+  const dispatch = useDispatch();
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -27,13 +29,14 @@ export default function BookEditScreen({ route, navigation }) {
     if (!result.canceled) setPhoto(result.assets[0].uri);
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!title || !author || !price || !stock || !category) {
       alert('Please fill in all required fields (title, author, price, stock, category)');
       return;
     }
-    try {
-      await axios.put(`http://192.168.100.16:3000/books/${book.id}`, {
+    dispatch(updateBook({
+      id: book.id,
+      bookData: {
         title,
         author,
         price: parseFloat(price),
@@ -41,12 +44,10 @@ export default function BookEditScreen({ route, navigation }) {
         category,
         description,
         photo,
-      });
-      alert('Book updated successfully');
-      navigation.navigate('BookList');
-    } catch (error) {
-      alert('Update failed: ' + error.message);
-    }
+      },
+    }));
+    alert('Book updated successfully');
+    navigation.navigate('BookList');
   };
 
   return (

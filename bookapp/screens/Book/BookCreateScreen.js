@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
+import { createBook } from '../../redux/books';
 
 export default function BookCreateScreen({ navigation }) {
   const [title, setTitle] = useState('');
@@ -11,6 +12,7 @@ export default function BookCreateScreen({ navigation }) {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
+  const dispatch = useDispatch();
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -26,26 +28,22 @@ export default function BookCreateScreen({ navigation }) {
     if (!result.canceled) setPhoto(result.assets[0].uri);
   };
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!title || !author || !price || !stock || !category) {
       alert('Please fill in all required fields (title, author, price, stock, category)');
       return;
     }
-    try {
-      await axios.post('http://192.168.100.16:3000/books', {
-        title,
-        author,
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        category,
-        description,
-        photo,
-      });
-      alert('Book created successfully');
-      navigation.navigate('BookList');
-    } catch (error) {
-      alert('Create failed: ' + error.message);
-    }
+    dispatch(createBook({
+      title,
+      author,
+      price: parseFloat(price),
+      stock: parseInt(stock),
+      category,
+      description,
+      photo,
+    }));
+    alert('Book created successfully');
+    navigation.navigate('BookList');
   };
 
   return (

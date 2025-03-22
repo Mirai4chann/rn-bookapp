@@ -2,8 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const bookRoutes = require('./routes/books');
+const cartRoutes = require('./routes/cart');
 const { initUsers } = require('./models/user');
 const { initBooks } = require('./models/book');
+const { initCart } = require('./models/cart');
 
 const app = express();
 
@@ -29,8 +31,10 @@ app.use((req, res, next) => {
 
 initUsers();
 initBooks();
+initCart();
 
 app.use('/auth', authRoutes);
 app.use('/books', bookRoutes);
+app.use('/cart', cartRoutes);
 
 app.listen(3000, () => console.log('Backend running on http://localhost:3000'));

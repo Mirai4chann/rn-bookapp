@@ -1,22 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers } from '../redux/users';
 
 export default function UserListScreen() {
-  const [users, setUsers] = useState([]);
+  const dispatch = useDispatch();
+  const { users } = useSelector((state) => state.users);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('http://192.168.100.16:3000/auth/users');
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const renderUser = ({ item }) => (
     <View style={styles.userItem}>

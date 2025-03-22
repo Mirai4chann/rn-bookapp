@@ -1,34 +1,85 @@
-import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../App';
+import React, { useEffect } from 'react';
+import { View, Text, FlatList, Button, Image, StyleSheet } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBooks } from '../redux/books';
+import { addToCart } from '../redux/cart';
+import { logout } from '../redux/auth';
 
-export default function UserHomeScreen({ navigation }) {
-  const { logout } = useAuth();
+export default function UserHomeScreen({ navigation }) { // Added navigation prop
+  const dispatch = useDispatch();
+  const { books } = useSelector((state) => state.books);
+  const { userId } = useSelector((state) => state.auth);
 
-  const handleLogout = async () => {
-    try {
-      const userId = await AsyncStorage.getItem('userId');
-      await axios.post('http://192.168.100.16:3000/auth/logout', { userId });
-      await logout();
-    } catch (error) {
-      alert('Logout failed: ' + error.message);
-    }
+  useEffect(() => {
+    dispatch(fetchBooks());
+  }, [dispatch]);
+
+  const handleAddToCart = (book) => {
+    dispatch(addToCart({ userId, book }));
+    alert(`${book.title} added to cart`);
   };
+
+  const renderBook = ({ item }) => (
+    <View style={styles.bookItem}>
+      {item.photo && <Image source={{ uri: item.photo }} style={styles.bookImage} />}
+      <View style={styles.bookDetails}>
+        <Text style={styles.bookTitle}>{item.title} by {item.author} - ${item.price}</Text>
+        <Text>Stock: {item.stock}</Text>
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Add to Cart"
+            onPress={() => handleAddToCart(item)}
+            disabled={item.stock <= 0}
+          />
+          <Button
+            title="View Details"
+            onPress={() => navigation.navigate('BookDetails', { book: item })} // Navigate to details
+          />
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>User Home Screen</Text>
-      <Text style={styles.text}>Welcome to your user dashboard!</Text>
-      <Text style={styles.text}>Use the tabs below to update your profile.</Text>
-      <Button title="Logout" onPress={handleLogout} />
+      <Text style={styles.title}>Welcome to Your Bookstore</Text>
+      <FlatList
+        data={books}
+        renderItem={renderBook}
+        keyExtractor={(item) => item.id.toString()}
+        style={styles.list}
+      />
+      <Button title="Logout" onPress={() => dispatch(logout())} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, marginBottom: 20 },
-  text: { fontSize: 16, marginVertical: 10, textAlign: 'center' },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  bookItem: {
+    flexDirection: 'row',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    alignItems: 'center',
+  },
+  bookImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+  },
+  bookDetails: {
+    flex: 1,
+  },
+  bookTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 5,
+  },
+  list: { marginBottom: 20 },
 });

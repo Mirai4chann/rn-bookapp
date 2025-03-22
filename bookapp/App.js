@@ -1,57 +1,47 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useEffect, useState } from 'react'; // Added useState
 import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Provider } from 'react-redux';
+import store from './redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { initializeAuth } from './redux/auth';
 import HomeNavigator from './navigators/HomeNavigator';
 import UserNavigator from './navigators/UserNavigator';
 import AdminNavigator from './navigators/AdminNavigator';
 
-const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
-
 export default function App() {
-  const [userState, setUserState] = useState({ isLoggedIn: false, isAdmin: false });
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
+  );
+}
+
+function AppContent() {
+  const dispatch = useDispatch();
+  const { isLoggedIn, isAdmin } = useSelector((state) => state.auth);
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        const isAdmin = await AsyncStorage.getItem('isAdmin');
-        const jwtToken = await AsyncStorage.getItem('jwtToken');
-        if (userId && jwtToken) {
-          setUserState({ isLoggedIn: true, isAdmin: isAdmin === '1' });
-        }
-      } catch (error) {
-        console.error('Error checking auth:', error);
-      }
-    };
-    checkAuth();
-  }, []);
+    dispatch(initializeAuth()).then(() => {
+      setIsLoading(false); // Set loading to false after initialization
+    });
+  }, [dispatch]);
 
-  const login = async (userId, isAdmin, token) => {
-    await AsyncStorage.setItem('userId', userId.toString());
-    await AsyncStorage.setItem('isAdmin', isAdmin.toString());
-    await AsyncStorage.setItem('jwtToken', token);
-    setUserState({ isLoggedIn: true, isAdmin: isAdmin === 1 });
-  };
-
-  const logout = async () => {
-    await AsyncStorage.multiRemove(['userId', 'isAdmin', 'jwtToken']);
-    setUserState({ isLoggedIn: false, isAdmin: false });
-  };
+  if (isLoading) {
+    return null; // Or a loading spinner: <View><Text>Loading...</Text></View>
+  }
 
   return (
-    <AuthContext.Provider value={{ login, logout, userState }}>
-      <NavigationContainer>
-        {!userState.isLoggedIn ? (
-          <HomeNavigator />
-        ) : userState.isAdmin ? (
-          <AdminNavigator />
-        ) : (
-          <UserNavigator />
-        )}
-      </NavigationContainer>
-    </AuthContext.Provider>
+    <NavigationContainer>
+      {!isLoggedIn ? (
+        <HomeNavigator />
+      ) : isAdmin ? (
+        <AdminNavigator />
+      ) : (
+        <UserNavigator />
+      )}
+    </NavigationContainer>
   );
 }
 

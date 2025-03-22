@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useState and useEffect
 import { View, Text, TextInput, Button, Image, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProfile, updateProfile } from '../redux/profile';
 
 export default function ProfileScreen() {
-  const [email, setEmail] = useState('');
+  const dispatch = useDispatch();
+  const { profile, error } = useSelector((state) => state.profile);
+  const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [photo, setPhoto] = useState(null);
+  const [name, setName] = useState(profile.name);
+  const [photo, setPhoto] = useState(profile.photo);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    dispatch(fetchProfile());
+  }, [dispatch]);
 
-  const loadProfile = async () => {
-    const userId = await AsyncStorage.getItem('userId');
-    if (userId) {
-      const response = await axios.get(`http://192.168.100.16:3000/auth/user/${userId}`);
-      setEmail(response.data.email);
-      setName(response.data.name);
-      setPhoto(response.data.photo);
-    }
-  };
+  useEffect(() => {
+    setEmail(profile.email);
+    setName(profile.name);
+    setPhoto(profile.photo);
+  }, [profile]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -38,14 +36,9 @@ export default function ProfileScreen() {
     if (!result.canceled) setPhoto(result.assets[0].uri);
   };
 
-  const handleUpdate = async () => {
-    try {
-      const userId = await AsyncStorage.getItem('userId');
-      await axios.put(`http://192.168.100.16:3000/auth/profile/${userId}`, { email, password, name, photo });
-      alert('Profile Updated');
-    } catch (error) {
-      alert('Update failed: ' + error.message);
-    }
+  const handleUpdate = () => {
+    dispatch(updateProfile({ email, password, name, photo }));
+    alert('Profile Updated');
   };
 
   return (
@@ -58,6 +51,7 @@ export default function ProfileScreen() {
       <Button title="Pick Photo" onPress={pickImage} />
       <Button title="Take Photo" onPress={takePhoto} />
       <Button title="Update Profile" onPress={handleUpdate} />
+      {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 }
@@ -67,4 +61,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
   input: { borderWidth: 1, marginVertical: 10, padding: 5 },
   image: { width: 100, height: 100, marginVertical: 10 },
+  error: { color: 'red', marginTop: 10, textAlign: 'center' },
 });

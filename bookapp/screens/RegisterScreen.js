@@ -29,12 +29,7 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
     try {
-      const response = await axios.post('http://192.168.100.16:3000/auth/register', {
-        email,
-        password,
-        name,
-        photo,
-      });
+      await axios.post('http://192.168.100.16:3000/auth/register', { email, password, name, photo });
       alert('Registration Successful');
       navigation.navigate('Login');
     } catch (error) {

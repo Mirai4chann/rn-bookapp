@@ -18,22 +18,26 @@ export default function BookCreateScreen({ navigation }) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return alert('Gallery permission denied');
     const result = await ImagePicker.launchImageLibraryAsync({ base64: true });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) {
+      setPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`); // Convert to base64
+    }
   };
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') return alert('Camera permission denied');
     const result = await ImagePicker.launchCameraAsync({ base64: true });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) {
+      setPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`); // Convert to base64
+    }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!title || !author || !price || !stock || !category) {
       alert('Please fill in all required fields (title, author, price, stock, category)');
       return;
     }
-    dispatch(createBook({
+    const bookData = {
       title,
       author,
       price: parseFloat(price),
@@ -41,9 +45,16 @@ export default function BookCreateScreen({ navigation }) {
       category,
       description,
       photo,
-    }));
-    alert('Book created successfully');
-    navigation.navigate('BookList');
+    };
+    console.log('Creating book with:', bookData);
+    try {
+      await dispatch(createBook(bookData)).unwrap(); // Use unwrap to catch errors
+      alert('Book created successfully');
+      navigation.navigate('BookList');
+    } catch (err) {
+      console.error('Book creation error:', err);
+      alert(`Failed to create book: ${err.message || 'Unknown error'}`);
+    }
   };
 
   return (

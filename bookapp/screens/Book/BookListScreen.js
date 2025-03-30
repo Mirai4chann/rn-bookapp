@@ -5,15 +5,16 @@ import { fetchBooks, deleteBook } from '../../redux/books';
 
 export default function BookListScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { books } = useSelector((state) => state.books);
+  const { books, error } = useSelector((state) => state.books);
 
   useEffect(() => {
     dispatch(fetchBooks());
   }, [dispatch]);
 
   const handleDelete = (id) => {
-    dispatch(deleteBook(id));
-    alert('Book deleted successfully');
+    dispatch(deleteBook(id))
+      .then(() => alert('Book deleted successfully'))
+      .catch((err) => alert(`Failed to delete book: ${err.message || 'Unknown error'}`));
   };
 
   const renderBook = ({ item }) => (
@@ -26,6 +27,15 @@ export default function BookListScreen({ navigation }) {
     </View>
   );
 
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Error: {error}</Text>
+        <Button title="Retry" onPress={() => dispatch(fetchBooks())} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Book List</Text>
@@ -33,7 +43,7 @@ export default function BookListScreen({ navigation }) {
       <FlatList
         data={books}
         renderItem={renderBook}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id} // Use id as string directly
         style={styles.list}
       />
     </View>

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../redux/cart';
 
 export default function BookDetailsScreen({ route, navigation }) {
-  const { book } = route.params; // Get book from navigation params
+  const { book } = route.params;
   const dispatch = useDispatch();
   const { userId } = useSelector((state) => state.auth);
 
@@ -23,15 +23,8 @@ export default function BookDetailsScreen({ route, navigation }) {
       <Text style={styles.detail}>Category: {book.category}</Text>
       <Text style={styles.detail}>Description: {book.description || 'No description available'}</Text>
       <View style={styles.buttonContainer}>
-        <Button
-          title="Add to Cart"
-          onPress={handleAddToCart}
-          disabled={book.stock <= 0}
-        />
-        <Button
-          title="Back"
-          onPress={() => navigation.goBack()}
-        />
+        <Button title="Add to Cart" onPress={handleAddToCart} disabled={book.stock <= 0} />
+
       </View>
     </View>
   );
@@ -42,5 +35,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   bookImage: { width: 150, height: 150, marginBottom: 20 },
   detail: { fontSize: 16, marginVertical: 5 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '60%', marginTop: 20 },
+  buttonContainer: { flexDirection: 'row', justifyContent: 'center', width: '60%', marginTop: 20 },
 });

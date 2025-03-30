@@ -1,48 +1,78 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const {
-  login,
-  register,
-  updateProfile,
-  saveToken,
-  logout,
-  getUser,
-  cleanupStaleTokens,
-  getAllUsers,
-} = require('../models/user');
+const mongoose = require('mongoose');
+const { login, register, updateProfile, getUser, getAllUsers, User } = require('../models/user');
+const { saveToken, logout } = require('../models/token');
 const router = express.Router();
 
-router.post('/login', (req, res) => {
+console.log('User model imported in auth.js:', User ? 'Defined' : 'Undefined');
+
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  login(email, password, (err, row) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!row) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: row.id, email }, 'secretkey', { expiresIn: '1h' });
-    saveToken(row.id, token, (err) => {
+  try {
+    const user = await login(email, password);
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ id: user.id, email }, 'secretkey', { expiresIn: '1h' });
+    saveToken(user.id.toString(), token, (err) => {
       if (err) return res.status(500).json({ error: 'Token save error' });
-      res.json({ token, userId: row.id, isAdmin: row.isAdmin });
+      res.json({ token, userId: user.id.toString(), isAdmin: user.isAdmin });
     });
-  });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { email, password, name, photo } = req.body;
-  console.log('Register request:', { email, password, name, photo });
-  register(email, password, name, photo, (err, userId) => {
-    if (err) {
-      console.error('Register error:', err);
-      return res.status(400).json({ error: 'Email already exists or invalid data' });
+  console.log('Register request body:', { email, password, name, photo });
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  if (!User) {
+    console.error('User model is undefined in register route');
+    return res.status(500).json({ error: 'Server configuration error: User model not available' });
+  }
+
+  try {
+    console.log(`Checking if email exists (case-insensitive): ${email}`);
+    const existingUser = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    console.log('Existing user result:', existingUser ? existingUser.email : 'None found');
+
+    if (existingUser) {
+      console.log(`Email ${email} already exists in database`);
+      return res.status(400).json({ error: 'Email already exists' });
     }
-    res.json({ message: 'Registration successful', userId });
-  });
+
+    const user = await register(email, password, name, photo);
+    res.status(201).json({ message: 'Registration successful', userId: user.id.toString() });
+  } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      console.log(`Duplicate key error on field: ${field}, value: ${err.keyValue[field]}`);
+      if (field === 'email') {
+        return res.status(400).json({ error: 'Email already exists' });
+      } else if (field === 'id') {
+        return res.status(400).json({ error: 'ID conflict detected' });
+      }
+      return res.status(400).json({ error: `Duplicate key error on ${field}` });
+    } else {
+      console.error('Registration error:', err.message);
+      res.status(400).json({ error: `Validation error: ${err.message}` });
+    }
+  }
 });
 
-router.put('/profile/:id', (req, res) => {
+router.put('/profile/:id', async (req, res) => {
   const { id } = req.params;
-  updateProfile(id, req.body, (err) => {
-    if (err) return res.status(400).json({ error: 'Error updating profile' });
+  try {
+    await updateProfile(parseInt(id), req.body);
     res.json({ message: 'Profile updated' });
-  });
+  } catch (err) {
+    res.status(400).json({ error: 'Error updating profile' });
+  }
 });
 
 router.post('/logout', (req, res) => {
@@ -53,27 +83,24 @@ router.post('/logout', (req, res) => {
   });
 });
 
-router.get('/user/:id', (req, res) => {
+router.get('/user/:id', async (req, res) => {
   const { id } = req.params;
-  getUser(id, (err, row) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!row) return res.status(404).json({ error: 'User not found' });
-    res.json({ email: row.email, name: row.name, photo: row.photo });
-  });
+  try {
+    const user = await getUser(parseInt(id));
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ email: user.email, name: user.name, photo: user.photo });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-router.post('/cleanup-tokens', (req, res) => {
-  cleanupStaleTokens((err) => {
-    if (err) return res.status(500).json({ error: 'Cleanup failed' });
-    res.json({ message: 'Stale tokens cleaned up' });
-  });
-});
-
-router.get('/users', (req, res) => {
-  getAllUsers((err, rows) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json(rows);
-  });
+router.get('/users', async (req, res) => {
+  try {
+    const users = await getAllUsers();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;

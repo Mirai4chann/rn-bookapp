@@ -1,82 +1,79 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const db = new sqlite3.Database(path.join(__dirname, '../../db/bookstore.db'));
+const mongoose = require('mongoose');
 
-const initUsers = () => {
-  db.serialize(() => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        password TEXT,
-        name TEXT,
-        photo TEXT,
-        jwtToken TEXT,
-        isAdmin INTEGER DEFAULT 0
-      )
-    `, (err) => {
-      if (err) console.error('Error creating users table:', err);
-      else console.log('Users table ready');
-    });
-    db.run(`INSERT OR IGNORE INTO users (email, password, name, isAdmin) VALUES ('admin@bookstore.com', 'admin123', 'Admin', 1)`, (err) => {
-      if (err) console.error('Error inserting admin:', err);
-      else console.log('Admin user inserted or already exists');
-    });
-  });
-};
+const userSchema = new mongoose.Schema({
+  id: { type: Number, unique: true, required: true }, // Custom ID field
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  name: String,
+  photo: String,
+  isAdmin: { type: Number, default: 0 }, // 0 for users, 1 for admin
+});
 
-const login = (email, password, callback) => {
-  db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], callback);
-};
+const User = mongoose.model('User', userSchema);
 
-const register = (email, password, name, photo, callback) => {
-  db.run(
-    'INSERT INTO users (email, password, name, photo, isAdmin) VALUES (?, ?, ?, ?, 0)',
-    [email, password, name, photo || null],
-    function (err) {
-      if (err) callback(err);
-      else callback(null, this.lastID);
+const initUsers = async () => {
+  try {
+    console.log('Initializing users...');
+    const adminExists = await User.findOne({ email: 'admin@bookstore.com' });
+    if (!adminExists) {
+      await User.create({
+        id: 1, // Admin gets ID 1
+        email: 'admin@bookstore.com',
+        password: 'admin123',
+        name: 'Admin',
+        photo: null,
+        isAdmin: 1,
+      });
+      console.log('Admin user inserted with id: 1, email: admin@bookstore.com');
+    } else {
+      console.log('Admin already exists in database');
     }
+  } catch (err) {
+    console.error('Error initializing users:', err);
+  }
+};
+
+const login = (email, password) => User.findOne({ email, password });
+
+const register = async (email, password, name, photo) => {
+  try {
+    // Find the highest existing id and increment it
+    const lastUser = await User.findOne().sort({ id: -1 }); // Get user with highest id
+    const nextId = lastUser && lastUser.id ? lastUser.id + 1 : 1; // Start at 1 if no users, 2 after admin
+
+    // If this is not the admin and id: 1 exists, ensure we start at 2
+    if (nextId === 1) {
+      const adminExists = await User.findOne({ id: 1 });
+      if (adminExists) {
+        console.log('Admin exists with id: 1, setting nextId to 2');
+        nextId = 2;
+      }
+    }
+
+    console.log(`Assigning id: ${nextId} to new user: ${email}`);
+    const user = await User.create({
+      id: nextId,
+      email,
+      password,
+      name,
+      photo,
+      isAdmin: 0, // All new registrations are regular users
+    });
+    console.log(`User registered: ${email}, id: ${nextId}, isAdmin: ${user.isAdmin}`);
+    return user;
+  } catch (err) {
+    console.error('Register error:', err);
+    throw err;
+  }
+};
+
+const updateProfile = (id, data) => User.findOneAndUpdate({ id }, data, { new: true });
+
+const getUser = (id) => User.findOne({ id });
+
+const getAllUsers = () => 
+  User.find({}, 'id email name isAdmin').then(users => 
+    users.map(user => ({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin }))
   );
-};
 
-const updateProfile = (id, data, callback) => {
-  const { email, password, name, photo } = data;
-  db.run(
-    'UPDATE users SET email = ?, password = ?, name = ?, photo = ? WHERE id = ?',
-    [email, password, name, photo, id],
-    callback
-  );
-};
-
-const saveToken = (id, jwtToken, callback) => {
-  db.run('UPDATE users SET jwtToken = ? WHERE id = ?', [jwtToken, id], callback);
-};
-
-const logout = (id, callback) => {
-  db.run('UPDATE users SET jwtToken = NULL WHERE id = ?', [id], callback);
-};
-
-const getUser = (id, callback) => {
-  db.get('SELECT * FROM users WHERE id = ?', [id], callback);
-};
-
-const cleanupStaleTokens = (callback) => {
-  db.run('UPDATE users SET jwtToken = NULL WHERE jwtToken IS NOT NULL AND id NOT IN (SELECT id FROM users WHERE jwtToken IS NOT NULL LIMIT 1)', callback);
-};
-
-const getAllUsers = (callback) => {
-  db.all('SELECT id, email, name, isAdmin FROM users', [], callback);
-};
-
-module.exports = {
-  initUsers,
-  login,
-  register,
-  updateProfile,
-  saveToken,
-  logout,
-  getUser,
-  cleanupStaleTokens,
-  getAllUsers,
-};
+module.exports = { initUsers, login, register, updateProfile, getUser, getAllUsers, User };

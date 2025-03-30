@@ -1,17 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { fetchCart } from './cart'; // Import fetchCart
 
 export const login = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
   try {
-    const response = await axios.post('http://192.168.100.16:3000/auth/login', { email, password });
-    await AsyncStorage.setItem('userId', response.data.userId.toString());
-    await AsyncStorage.setItem('isAdmin', response.data.isAdmin.toString());
-    await AsyncStorage.setItem('jwtToken', response.data.token);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || 'Login failed');
+    const res = await axios.post('http://192.168.100.16:3000/auth/login', { email, password });
+    await AsyncStorage.multiSet([
+      ['userId', res.data.userId],
+      ['isAdmin', res.data.isAdmin.toString()],
+      ['jwtToken', res.data.token],
+    ]);
+    return { token: res.data.token, userId: res.data.userId, isAdmin: res.data.isAdmin };
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Login failed');
   }
 });
 
@@ -21,14 +22,11 @@ export const logout = createAsyncThunk('auth/logout', async (_, { getState }) =>
   await AsyncStorage.multiRemove(['userId', 'isAdmin', 'jwtToken']);
 });
 
-export const initializeAuth = createAsyncThunk('auth/initializeAuth', async (_, { dispatch }) => {
+export const initializeAuth = createAsyncThunk('auth/initializeAuth', async () => {
   const userId = await AsyncStorage.getItem('userId');
   const isAdmin = await AsyncStorage.getItem('isAdmin');
   const jwtToken = await AsyncStorage.getItem('jwtToken');
   if (userId && jwtToken) {
-    if (isAdmin !== '1') {
-      await dispatch(fetchCart(userId)).unwrap(); // Ensure fetchCart completes
-    }
     return { userId, isAdmin: isAdmin === '1', token: jwtToken };
   }
   return null;

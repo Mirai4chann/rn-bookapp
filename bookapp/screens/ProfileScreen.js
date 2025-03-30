@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Added useState and useEffect
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch, useSelector } from 'react-redux';

@@ -10,11 +10,10 @@ import BookDetailsScreen from '../screens/BookDetailsScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Stack for UserHome with Details screen
 function UserHomeStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="UserHome" component={UserHomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Home" component={UserHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BookDetails" component={BookDetailsScreen} options={{ title: 'Book Details' }} />
     </Stack.Navigator>
   );
@@ -23,7 +22,7 @@ function UserHomeStack() {
 export default function UserNavigator() {
   return (
     <Tab.Navigator
-      initialRouteName="UserHomeStack" // Fixed: Changed from "UserHome" to "UserHomeStack"
+      initialRouteName="UserHomeStack"
       screenOptions={{
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,

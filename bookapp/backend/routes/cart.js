@@ -1,46 +1,81 @@
 const express = require('express');
-const router = express.Router();
 const { addToCart, getCart, updateQuantity, removeFromCart, clearCart } = require('../models/cart');
+const { getAllBooks } = require('../models/book');
+const router = express.Router();
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { userId, bookId, quantity } = req.body;
-  addToCart(userId, bookId, quantity, (err) => {
-    if (err) return res.status(400).json({ error: 'Error adding to cart' });
+  try {
+    await addToCart(userId, bookId, quantity);
+    console.log(`Added to cart: userId=${userId}, bookId=${bookId}, quantity=${quantity}`);
     res.json({ message: 'Added to cart' });
-  });
+  } catch (err) {
+    console.error('Error adding to cart:', err);
+    res.status(400).json({ error: 'Error adding to cart' });
+  }
 });
 
-router.get('/:userId', (req, res) => {
+router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
-  getCart(userId, (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json(rows);
-  });
+  try {
+    const cartItems = await getCart(userId);
+    console.log('SQLite cart items:', cartItems);
+
+    if (!cartItems || cartItems.length === 0) {
+      return res.json([]);
+    }
+
+    const books = await getAllBooks();
+    console.log('MongoDB books:', books);
+
+    const cartWithBooks = cartItems.map(item => {
+      const book = books.find(b => b.id === item.bookId);
+      return {
+        book: book || { id: item.bookId, title: 'Unknown Book' },
+        quantity: item.quantity,
+      };
+    });
+
+    console.log('Enriched cart data:', cartWithBooks);
+    res.json(cartWithBooks);
+  } catch (err) {
+    console.error('Error fetching cart:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-router.put('/:userId/:bookId', (req, res) => {
+router.put('/:userId/:bookId', async (req, res) => {
   const { userId, bookId } = req.params;
   const { quantity } = req.body;
-  updateQuantity(userId, bookId, quantity, (err) => {
-    if (err) return res.status(400).json({ error: 'Error updating quantity' });
+  try {
+    await updateQuantity(userId, bookId, quantity);
     res.json({ message: 'Quantity updated' });
-  });
+  } catch (err) {
+    console.error('Error updating quantity:', err);
+    res.status(400).json({ error: 'Error updating quantity' });
+  }
 });
 
-router.delete('/:userId/:bookId', (req, res) => {
+router.delete('/:userId/:bookId', async (req, res) => {
   const { userId, bookId } = req.params;
-  removeFromCart(userId, bookId, (err) => {
-    if (err) return res.status(400).json({ error: 'Error removing from cart' });
+  try {
+    await removeFromCart(userId, bookId);
     res.json({ message: 'Removed from cart' });
-  });
+  } catch (err) {
+    console.error('Error removing from cart:', err);
+    res.status(400).json({ error: 'Error removing from cart' });
+  }
 });
 
-router.delete('/:userId', (req, res) => {
+router.delete('/:userId', async (req, res) => {
   const { userId } = req.params;
-  clearCart(userId, (err) => {
-    if (err) return res.status(400).json({ error: 'Error clearing cart' });
+  try {
+    await clearCart(userId);
     res.json({ message: 'Cart cleared' });
-  });
+  } catch (err) {
+    console.error('Error clearing cart:', err);
+    res.status(400).json({ error: 'Error clearing cart' });
+  }
 });
 
 module.exports = router;

@@ -1,50 +1,34 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useSelector, useDispatch } from 'react-redux';
+import { initializeAuth } from '../redux/auth';
 import HomeNavigator from './HomeNavigator';
 import AdminNavigator from './AdminNavigator';
 import UserNavigator from './UserNavigator';
 
-const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
-const Main = ({ initialRoute }) => {
+const Main = () => {
+  const { isLoggedIn, isAdmin } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeAuth());
+  }, [dispatch]);
+
   return (
-    <Tab.Navigator
-      initialRouteName={initialRoute} // Use prop from App.js
-      screenOptions={{
-        tabBarHideOnKeyboard: true,
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: '#e91e63',
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeNavigator}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="home" color={color} size={30} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Admin"
-        component={AdminNavigator}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="cog" color={color} size={30} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="User"
-        component={UserNavigator}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="user" color={color} size={30} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isLoggedIn ? (
+          <Stack.Screen name="Home" component={HomeNavigator} />
+        ) : isAdmin ? (
+          <Stack.Screen name="Admin" component={AdminNavigator} />
+        ) : (
+          <Stack.Screen name="User" component={UserNavigator} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 

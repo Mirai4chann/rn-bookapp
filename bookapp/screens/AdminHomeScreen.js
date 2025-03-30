@@ -10,7 +10,7 @@ export default function AdminHomeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Admin Dashboard</Text>
       <Text style={styles.text}>Welcome to your admin dashboard!</Text>
-      <Text style={styles.text}>Use the tabs below to manage users, books, or update your profile.</Text>
+      <Text style={styles.text}>Use the tabs below to manage books, users, or update your profile.</Text>
       <Button title="Logout" onPress={() => dispatch(logout())} />
     </View>
   );

@@ -58,6 +58,7 @@ router.delete('/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     await clearCart(userId);
+    console.log(`Cart cleared for user ${userId} via API`);
     res.json({ message: 'Cart cleared' });
   } catch (err) {
     console.error('Error clearing cart:', err);

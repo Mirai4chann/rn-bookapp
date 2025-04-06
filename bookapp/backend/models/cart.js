@@ -7,7 +7,7 @@ const initCart = () => {
     db.run(`
       CREATE TABLE IF NOT EXISTS cart (
         userId TEXT,
-        bookId INTEGER,
+        bookId TEXT, -- Changed to TEXT to match MongoDB ObjectId
         quantity INTEGER,
         PRIMARY KEY (userId, bookId)
       )
@@ -20,17 +20,16 @@ const initCart = () => {
 
 const addToCart = (userId, bookId, quantity) => {
   return new Promise((resolve, reject) => {
-    const numericBookId = parseInt(bookId);
-    db.get('SELECT quantity FROM cart WHERE userId = ? AND bookId = ?', [userId, numericBookId], (err, row) => {
+    db.get('SELECT quantity FROM cart WHERE userId = ? AND bookId = ?', [userId, bookId], (err, row) => {
       if (err) return reject(err);
       if (row) {
         const newQuantity = row.quantity + quantity;
-        db.run('UPDATE cart SET quantity = ? WHERE userId = ? AND bookId = ?', [newQuantity, userId, numericBookId], (err) => {
+        db.run('UPDATE cart SET quantity = ? WHERE userId = ? AND bookId = ?', [newQuantity, userId, bookId], (err) => {
           if (err) reject(err);
           else resolve();
         });
       } else {
-        db.run('INSERT INTO cart (userId, bookId, quantity) VALUES (?, ?, ?)', [userId, numericBookId, quantity], (err) => {
+        db.run('INSERT INTO cart (userId, bookId, quantity) VALUES (?, ?, ?)', [userId, bookId, quantity], (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -50,8 +49,7 @@ const getCart = (userId) => {
 
 const updateQuantity = (userId, bookId, quantity) => {
   return new Promise((resolve, reject) => {
-    const numericBookId = parseInt(bookId);
-    db.run('UPDATE cart SET quantity = ? WHERE userId = ? AND bookId = ?', [quantity, userId, numericBookId], (err) => {
+    db.run('UPDATE cart SET quantity = ? WHERE userId = ? AND bookId = ?', [quantity, userId, bookId], (err) => {
       if (err) reject(err);
       else resolve();
     });
@@ -60,8 +58,7 @@ const updateQuantity = (userId, bookId, quantity) => {
 
 const removeFromCart = (userId, bookId) => {
   return new Promise((resolve, reject) => {
-    const numericBookId = parseInt(bookId);
-    db.run('DELETE FROM cart WHERE userId = ? AND bookId = ?', [userId, numericBookId], (err) => {
+    db.run('DELETE FROM cart WHERE userId = ? AND bookId = ?', [userId, bookId], (err) => {
       if (err) reject(err);
       else resolve();
     });
@@ -71,8 +68,13 @@ const removeFromCart = (userId, bookId) => {
 const clearCart = (userId) => {
   return new Promise((resolve, reject) => {
     db.run('DELETE FROM cart WHERE userId = ?', [userId], (err) => {
-      if (err) reject(err);
-      else resolve();
+      if (err) {
+        console.error(`Failed to clear cart for user ${userId}:`, err);
+        reject(err);
+      } else {
+        console.log(`SQLite: Cleared cart for user ${userId}`);
+        resolve();
+      }
     });
   });
 };

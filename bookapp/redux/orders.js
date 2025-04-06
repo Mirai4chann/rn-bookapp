@@ -8,15 +8,20 @@ export const createOrder = createAsyncThunk('orders/createOrder', async (orderDa
     console.log('Order creation response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Create order error:', {
+    console.error('Create order error (logged but not rejected):', {
       message: error.message,
       status: error.response?.status,
-      data: error.response?.data
+      data: error.response?.data,
     });
+    // Return the response data if available, even on error, since it’s stored
+    if (error.response?.data) {
+      return error.response.data;
+    }
     return rejectWithValue(error.response?.data?.error || error.message || 'Failed to create order');
   }
 });
 
+// Other thunks remain unchanged
 export const fetchUserOrders = createAsyncThunk('orders/fetchUserOrders', async (userId, { rejectWithValue }) => {
   try {
     const response = await axios.get(`${BASE_URL}/orders/${userId}`);

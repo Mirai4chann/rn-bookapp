@@ -5,7 +5,11 @@ const orderSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
   userId: { type: String, required: true },
   order_items: [{
-    book: { type: Object, required: true }, // Expecting book object with at least an id
+    book: { 
+      type: mongoose.Schema.Types.Mixed, // Allow flexibility, or use specific type below
+      // id: { type: String, required: true }, // Explicitly expect string ID (MongoDB ObjectId)
+      required: true 
+    },
     quantity: { type: Number, required: true }
   }],
   totalPrice: { type: Number, required: true },
@@ -25,6 +29,7 @@ module.exports = {
         if (!item.book || !item.book.id) {
           throw new Error('Invalid book data in order items');
         }
+        // Ensure updateStock handles string IDs
         await updateStock(item.book.id, item.quantity);
       }
       return order;

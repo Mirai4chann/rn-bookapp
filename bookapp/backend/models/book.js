@@ -20,10 +20,8 @@ const initBooks = () => {
 module.exports = {
   initBooks,
   createBook: async (title, author, price, stock, category, description, photo) => {
-    // Find the highest existing id and increment it
-    const lastBook = await Book.findOne().sort({ id: -1 }); // Get book with highest id
-    const nextId = lastBook && lastBook.id ? lastBook.id + 1 : 1; // Start at 1 if no books exist
-
+    const lastBook = await Book.findOne().sort({ id: -1 });
+    const nextId = lastBook && lastBook.id ? lastBook.id + 1 : 1;
     console.log(`Assigning id: ${nextId} to new book: ${title}`);
     const book = await Book.create({
       id: nextId,
@@ -35,22 +33,31 @@ module.exports = {
       description,
       photo,
     });
-    return { id: book.id, ...book._doc }; // Return id as number
+    return { id: book.id, ...book._doc };
   },
   getAllBooks: async () => {
     const books = await Book.find();
-    return books.map(book => ({ id: book.id, ...book._doc })); // Use numeric id
+    return books.map(book => ({ id: book.id, ...book._doc }));
   },
   updateBook: async (id, title, author, price, stock, category, description, photo) => {
     const book = await Book.findOneAndUpdate(
-      { id }, // Find by custom id
+      { id },
       { title, author, price, stock, category, description, photo },
       { new: true }
     );
     return book ? { id: book.id, ...book._doc } : null;
   },
   deleteBook: async (id) => {
-    const book = await Book.findOneAndDelete({ id }); // Delete by custom id
+    const book = await Book.findOneAndDelete({ id });
     return book ? { id: book.id, ...book._doc } : null;
+  },
+  updateStock: async (id, quantity) => { // Added for stock management
+    const book = await Book.findOneAndUpdate(
+      { id },
+      { $inc: { stock: -quantity } },
+      { new: true }
+    );
+    if (!book || book.stock < 0) throw new Error(`Insufficient stock for book ID ${id}`);
+    return { id: book.id, ...book._doc };
   },
 };

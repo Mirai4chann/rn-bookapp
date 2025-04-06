@@ -7,7 +7,6 @@ router.post('/', async (req, res) => {
   const { userId, bookId, quantity } = req.body;
   try {
     await addToCart(userId, bookId, quantity);
-    console.log(`Added to cart: userId=${userId}, bookId=${bookId}, quantity=${quantity}`);
     res.json({ message: 'Added to cart' });
   } catch (err) {
     console.error('Error adding to cart:', err);
@@ -19,24 +18,12 @@ router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     const cartItems = await getCart(userId);
-    console.log('SQLite cart items:', cartItems);
-
-    if (!cartItems || cartItems.length === 0) {
-      return res.json([]);
-    }
-
+    if (!cartItems || cartItems.length === 0) return res.json([]);
     const books = await getAllBooks();
-    console.log('MongoDB books:', books);
-
     const cartWithBooks = cartItems.map(item => {
       const book = books.find(b => b.id === item.bookId);
-      return {
-        book: book || { id: item.bookId, title: 'Unknown Book' },
-        quantity: item.quantity,
-      };
+      return { book: book || { id: item.bookId, title: 'Unknown Book' }, quantity: item.quantity };
     });
-
-    console.log('Enriched cart data:', cartWithBooks);
     res.json(cartWithBooks);
   } catch (err) {
     console.error('Error fetching cart:', err);

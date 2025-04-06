@@ -8,6 +8,7 @@ const { initUsers } = require('./models/user');
 const bookRoutes = require('./routes/books');
 const cartRoutes = require('./routes/cart');
 const authRoutes = require('./routes/auth');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 
@@ -26,8 +27,13 @@ app.use(express.json());
 
 // Log incoming requests
 app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.url} - Body:`, req.body);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Body:`, req.body);
   next();
+});
+
+// Root route to verify server is running
+app.get('/', (req, res) => {
+  res.send('Server is running');
 });
 
 // Connect to MongoDB and initialize
@@ -46,6 +52,7 @@ initSQLite();
 app.use('/books', bookRoutes);
 app.use('/cart', cartRoutes);
 app.use('/auth', authRoutes);
+app.use('/orders', orderRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

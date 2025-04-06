@@ -4,8 +4,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import UserHomeScreen from '../screens/UserHomeScreen';
 import CartScreen from '../screens/CartScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import BookDetailsScreen from '../screens/BookDetailsScreen';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import ReviewScreen from '../screens/ReviewScreen';
+import OrderScreen from '../screens/OrderScreen'; // Add this import
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -15,6 +17,17 @@ function UserHomeStack() {
     <Stack.Navigator>
       <Stack.Screen name="Home" component={UserHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BookDetails" component={BookDetailsScreen} options={{ title: 'Book Details' }} />
+      <Stack.Screen name="Orders" component={OrderDetailsScreen} options={{ title: 'My Orders' }} />
+      <Stack.Screen name="Review" component={ReviewScreen} options={{ title: 'Review Order' }} />
+    </Stack.Navigator>
+  );
+}
+
+function CartStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Cart" component={CartScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Order" component={OrderScreen} options={{ title: 'Checkout' }} />
     </Stack.Navigator>
   );
 }
@@ -38,18 +51,18 @@ export default function UserNavigator() {
         }}
       />
       <Tab.Screen
-        name="Cart"
-        component={CartScreen}
+        name="CartStack"
+        component={CartStack}
         options={{
           tabBarIcon: ({ color }) => <Icon name="shopping-cart" color={color} size={30} />,
           headerShown: false,
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="OrdersTab"
+        component={OrderDetailsScreen}
         options={{
-          tabBarIcon: ({ color }) => <Icon name="user" color={color} size={30} />,
+          tabBarIcon: ({ color }) => <Icon name="list" color={color} size={30} />,
           headerShown: false,
         }}
       />

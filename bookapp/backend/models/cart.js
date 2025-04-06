@@ -12,20 +12,15 @@ const initCart = () => {
         PRIMARY KEY (userId, bookId)
       )
     `, (err) => {
-      if (err) {
-        console.error('Error creating cart table:', err);
-        reject(err);
-      } else {
-        console.log('Cart table ready (SQLite)');
-        resolve();
-      }
+      if (err) reject(err);
+      else resolve();
     });
   });
 };
 
 const addToCart = (userId, bookId, quantity) => {
   return new Promise((resolve, reject) => {
-    const numericBookId = parseInt(bookId); // Ensure bookId is a number
+    const numericBookId = parseInt(bookId);
     db.get('SELECT quantity FROM cart WHERE userId = ? AND bookId = ?', [userId, numericBookId], (err, row) => {
       if (err) return reject(err);
       if (row) {
@@ -48,10 +43,7 @@ const getCart = (userId) => {
   return new Promise((resolve, reject) => {
     db.all('SELECT bookId, quantity FROM cart WHERE userId = ?', [userId], (err, rows) => {
       if (err) reject(err);
-      else {
-        console.log('Raw cart data from SQLite:', rows);
-        resolve(rows);
-      }
+      else resolve(rows);
     });
   });
 };

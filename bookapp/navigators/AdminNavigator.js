@@ -8,6 +8,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import BookListScreen from '../screens/Book/BookListScreen';
 import BookCreateScreen from '../screens/Book/BookCreateScreen';
 import BookEditScreen from '../screens/Book/BookEditScreen';
+import AdminOrdersScreen from '../screens/AdminOrdersScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -53,6 +54,14 @@ export default function AdminNavigator() {
         component={BookStack}
         options={{
           tabBarIcon: ({ color }) => <Icon name="book" color={color} size={30} />,
+          headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={AdminOrdersScreen}
+        options={{
+          tabBarIcon: ({ color }) => <Icon name="truck" color={color} size={30} />,
           headerShown: false,
         }}
       />

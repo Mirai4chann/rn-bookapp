@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const createOrder = createAsyncThunk('orders/createOrder', async (orderData, { rejectWithValue }) => {
   try {
-    const response = await axios.post('http://192.168.100.16:3000/orders', orderData);
+    const response = await axios.post(`${BASE_URL}/orders`, orderData);
     console.log('Order creation response:', response.data);
     return response.data;
   } catch (error) {
@@ -18,7 +19,7 @@ export const createOrder = createAsyncThunk('orders/createOrder', async (orderDa
 
 export const fetchUserOrders = createAsyncThunk('orders/fetchUserOrders', async (userId, { rejectWithValue }) => {
   try {
-    const response = await axios.get(`http://192.168.100.16:3000/orders/${userId}`);
+    const response = await axios.get(`${BASE_URL}/orders/${userId}`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error fetching orders');
@@ -27,7 +28,7 @@ export const fetchUserOrders = createAsyncThunk('orders/fetchUserOrders', async 
 
 export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (_, { rejectWithValue }) => {
   try {
-    const response = await axios.get('http://192.168.100.16:3000/orders');
+    const response = await axios.get(`${BASE_URL}/orders`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error fetching all orders');
@@ -36,7 +37,7 @@ export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (_
 
 export const updateOrderStatus = createAsyncThunk('orders/updateOrderStatus', async ({ id, status }, { rejectWithValue }) => {
   try {
-    const response = await axios.put(`http://192.168.100.16:3000/orders/${id}`, { status });
+    const response = await axios.put(`${BASE_URL}/orders/${id}`, { status });
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error updating order status');

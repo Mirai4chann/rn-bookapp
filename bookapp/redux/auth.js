@@ -1,10 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const login = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
   try {
-    const res = await axios.post('http://192.168.100.16:3000/auth/login', { email, password });
+    const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
     await AsyncStorage.multiSet([
       ['userId', res.data.userId],
       ['isAdmin', res.data.isAdmin.toString()],
@@ -18,7 +19,7 @@ export const login = createAsyncThunk('auth/login', async ({ email, password }, 
 
 export const logout = createAsyncThunk('auth/logout', async (_, { getState }) => {
   const { userId } = getState().auth;
-  await axios.post('http://192.168.100.16:3000/auth/logout', { userId });
+  await axios.post(`${BASE_URL}/auth/logout`, { userId });
   await AsyncStorage.multiRemove(['userId', 'isAdmin', 'jwtToken']);
 });
 

@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const createReview = createAsyncThunk('reviews/createReview', async (reviewData, { rejectWithValue }) => {
   try {
-    const response = await axios.post('http://192.168.100.16:3000/reviews', reviewData);
+    const response = await axios.post(`${BASE_URL}/reviews`, reviewData);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error creating review');
@@ -12,7 +13,7 @@ export const createReview = createAsyncThunk('reviews/createReview', async (revi
 
 export const fetchBookReviews = createAsyncThunk('reviews/fetchBookReviews', async (bookId, { rejectWithValue }) => {
   try {
-    const response = await axios.get(`http://192.168.100.16:3000/reviews/book/${bookId}`);
+    const response = await axios.get(`${BASE_URL}/reviews/book/${bookId}`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error fetching reviews');
@@ -21,7 +22,7 @@ export const fetchBookReviews = createAsyncThunk('reviews/fetchBookReviews', asy
 
 export const fetchUserReviews = createAsyncThunk('reviews/fetchUserReviews', async (userId, { rejectWithValue }) => {
   try {
-    const response = await axios.get(`http://192.168.100.16:3000/reviews/user/${userId}`);
+    const response = await axios.get(`${BASE_URL}/reviews/user/${userId}`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error fetching user reviews');

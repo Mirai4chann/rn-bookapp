@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const fetchCart = createAsyncThunk('cart/fetchCart', async (userId, { rejectWithValue }) => {
   try {
-    const response = await axios.get(`http://192.168.100.16:3000/cart/${userId}`);
+    const response = await axios.get(`${BASE_URL}/cart/${userId}`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error fetching cart');
@@ -13,7 +14,7 @@ export const fetchCart = createAsyncThunk('cart/fetchCart', async (userId, { rej
 export const addToCart = createAsyncThunk('cart/addToCart', async ({ userId, book }, { dispatch, rejectWithValue }) => {
   try {
     const bookId = parseInt(book.id);
-    await axios.post('http://192.168.100.16:3000/cart', { userId, bookId, quantity: 1 });
+    await axios.post(`${BASE_URL}/cart`, { userId, bookId, quantity: 1 });
     return await dispatch(fetchCart(userId)).unwrap();
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error adding to cart');
@@ -27,7 +28,7 @@ export const increaseQuantity = createAsyncThunk('cart/increaseQuantity', async 
   if (item.quantity >= item.book.stock) return rejectWithValue('Cannot exceed stock limit');
   try {
     const newQuantity = item.quantity + 1;
-    await axios.put(`http://192.168.100.16:3000/cart/${userId}/${bookId}`, { quantity: newQuantity });
+    await axios.put(`${BASE_URL}/cart/${userId}/${bookId}`, { quantity: newQuantity });
     return await dispatch(fetchCart(userId)).unwrap();
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error increasing quantity');
@@ -41,7 +42,7 @@ export const decreaseQuantity = createAsyncThunk('cart/decreaseQuantity', async 
   if (item.quantity <= 1) return rejectWithValue('Quantity cannot be less than 1');
   try {
     const newQuantity = item.quantity - 1;
-    await axios.put(`http://192.168.100.16:3000/cart/${userId}/${bookId}`, { quantity: newQuantity });
+    await axios.put(`${BASE_URL}/cart/${userId}/${bookId}`, { quantity: newQuantity });
     return await dispatch(fetchCart(userId)).unwrap();
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error decreasing quantity');
@@ -50,7 +51,7 @@ export const decreaseQuantity = createAsyncThunk('cart/decreaseQuantity', async 
 
 export const removeFromCart = createAsyncThunk('cart/removeFromCart', async ({ userId, bookId }, { dispatch, rejectWithValue }) => {
   try {
-    await axios.delete(`http://192.168.100.16:3000/cart/${userId}/${bookId}`);
+    await axios.delete(`${BASE_URL}/cart/${userId}/${bookId}`);
     return await dispatch(fetchCart(userId)).unwrap();
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error removing from cart');
@@ -59,7 +60,7 @@ export const removeFromCart = createAsyncThunk('cart/removeFromCart', async ({ u
 
 export const checkout = createAsyncThunk('cart/checkout', async (userId, { dispatch, rejectWithValue }) => {
   try {
-    await axios.delete(`http://192.168.100.16:3000/cart/${userId}`);
+    await axios.delete(`${BASE_URL}/cart/${userId}`);
     return await dispatch(fetchCart(userId)).unwrap();
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || 'Error during checkout');

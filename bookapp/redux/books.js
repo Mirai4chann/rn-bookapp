@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const fetchBooks = createAsyncThunk('books/fetchBooks', async (_, { rejectWithValue }) => {
   try {
-    const response = await axios.get('http://192.168.100.16:3000/books');
+    const response = await axios.get(`${BASE_URL}/books`);
     console.log('Fetched books:', response.data);
     return response.data;
   } catch (error) {
@@ -15,7 +16,7 @@ export const fetchBooks = createAsyncThunk('books/fetchBooks', async (_, { rejec
 export const createBook = createAsyncThunk('books/createBook', async (bookData, { dispatch, rejectWithValue }) => {
   try {
     console.log('Sending book data:', bookData);
-    const response = await axios.post('http://192.168.100.16:3000/books', bookData);
+    const response = await axios.post(`${BASE_URL}/books`, bookData);
     await dispatch(fetchBooks());
     return response.data;
   } catch (error) {
@@ -26,7 +27,7 @@ export const createBook = createAsyncThunk('books/createBook', async (bookData, 
 
 export const updateBook = createAsyncThunk('books/updateBook', async ({ id, bookData }, { dispatch, rejectWithValue }) => {
   try {
-    const response = await axios.put(`http://192.168.100.16:3000/books/${id}`, bookData);
+    const response = await axios.put(`${BASE_URL}/books/${id}`, bookData);
     await dispatch(fetchBooks());
     return response.data;
   } catch (error) {
@@ -36,7 +37,7 @@ export const updateBook = createAsyncThunk('books/updateBook', async ({ id, book
 
 export const deleteBook = createAsyncThunk('books/deleteBook', async (id, { dispatch, rejectWithValue }) => {
   try {
-    await axios.delete(`http://192.168.100.16:3000/books/${id}`);
+    await axios.delete(`${BASE_URL}/books/${id}`);
     await dispatch(fetchBooks());
     return id;
   } catch (error) {

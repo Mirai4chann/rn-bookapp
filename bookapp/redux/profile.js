@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export const fetchProfile = createAsyncThunk('profile/fetchProfile', async (_, { rejectWithValue }) => {
   try {
@@ -8,7 +9,7 @@ export const fetchProfile = createAsyncThunk('profile/fetchProfile', async (_, {
     if (!userId) {
       throw new Error('No user ID found');
     }
-    const response = await axios.get(`http://192.168.100.16:3000/auth/user/${userId}`);
+    const response = await axios.get(`${BASE_URL}/auth/user/${userId}`);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || error.message || 'Error fetching profile');
@@ -30,7 +31,7 @@ export const updateProfile = createAsyncThunk('profile/updateProfile', async (pr
       ...(profileData.newPassword && { newPassword: profileData.newPassword })
     };
 
-    const response = await axios.put(`http://192.168.100.16:3000/auth/profile/${userId}`, cleanedData);
+    const response = await axios.put(`${BASE_URL}/auth/profile/${userId}`, cleanedData);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || error.message || 'Error updating profile');

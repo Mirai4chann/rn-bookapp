@@ -9,6 +9,7 @@ const bookRoutes = require('./routes/books');
 const cartRoutes = require('./routes/cart');
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
+const reviewRoutes = require('./routes/reviews');
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Log incoming requests
+// Log incoming requests 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Body:`, req.body);
   next();
@@ -53,6 +54,7 @@ app.use('/books', bookRoutes);
 app.use('/cart', cartRoutes);
 app.use('/auth', authRoutes);
 app.use('/orders', orderRoutes);
+app.use('/reviews', reviewRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -3,6 +3,7 @@ import { ScrollView, View, Text, TextInput, TouchableOpacity, Image, StyleSheet 
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
+import { BASE_URL } from '../src/config/apiConfig';
 
 export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export default function RegisterScreen({ navigation }) {
     }
     console.log('Register payload:', { email, password, name, photo });
     try {
-      const response = await axios.post('http://192.168.1.6:3000/auth/register', {
+      const response = await axios.post(`${BASE_URL}/auth/register`, {
         email, 
         password, 
         name, 
@@ -180,9 +181,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     borderWidth: 1, 
     borderColor: '#CCC', 
-    borderRadius: 20, // Adjusted for rounded edges
+    borderRadius: 20,
     paddingHorizontal: 10, 
-    marginVertical: 5, // Reduced for closer spacing between inputs
+    marginVertical: 5,
   },
   icon: { 
     marginRight: 10 
@@ -201,9 +202,9 @@ const styles = StyleSheet.create({
   photoButton: { 
     backgroundColor: '#E0E0E0', 
     padding: 12, 
-    borderRadius: 20, // Adjusted for rounded edges
-    borderWidth: 1, // Added border
-    borderColor: '#CCC', // Added border color
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#CCC',
     marginVertical: 5, 
     alignItems: 'center' 
   },
@@ -214,9 +215,9 @@ const styles = StyleSheet.create({
   registerButton: { 
     backgroundColor: '#FBC4AB', 
     padding: 15, 
-    borderRadius: 20, // Adjusted for rounded edges
-    borderWidth: 1, // Added border
-    borderColor: '#F79D65', // Added border color
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F79D65',
     marginTop: 20, 
     alignItems: 'center' 
   },

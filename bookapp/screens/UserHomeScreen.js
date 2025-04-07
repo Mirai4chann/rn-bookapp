@@ -22,22 +22,23 @@ export default function UserHomeScreen({ navigation }) {
 
   useEffect(() => {
     dispatch(fetchBooks());
-    dispatch(fetchUserReviews(userId)); // Fetch user's reviews
+    dispatch(fetchUserReviews(userId));
     if (books.length > 0) {
       setMaxPrice(Math.max(...books.map(book => book.price)));
-      books.forEach(book => dispatch(fetchBookReviews(book.id))); // Fetch reviews for all books
+      books.forEach(book => dispatch(fetchBookReviews(book.id)));
     }
-    // Refresh reviews when screen is focused (e.g., after submitting a review)
+    
     const unsubscribe = navigation.addListener('focus', () => {
       dispatch(fetchUserReviews(userId));
       books.forEach(book => dispatch(fetchBookReviews(book.id)));
     });
+    
     return unsubscribe;
   }, [dispatch, navigation, userId, books.length]);
 
   const handleAddToCart = (book) => {
     dispatch(addToCart({ userId, book }))
-      .then(() => Alert.alert('Success', `${book.title} added to cart`))
+      .then(() => Alert.alert('Added to Cart', `${book.title} was added to your cart`))
       .catch((err) => Alert.alert('Error', `Failed to add ${book.title} to cart: ${err.message || 'Unknown error'}`));
   };
 
@@ -50,7 +51,7 @@ export default function UserHomeScreen({ navigation }) {
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
-  const categories = ['All', ...new Set(books.map(book => book.category).filter(cat => cat !== 'Uncategorized'))];
+  const categories = ['All', ...new Set(books.map(book => book.category).filter(cat => cat && cat !== 'Uncategorized'))];
 
   const resetFilters = () => {
     setActiveCategory('All');
@@ -87,13 +88,20 @@ export default function UserHomeScreen({ navigation }) {
           <Text style={styles.bookTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.bookAuthor} numberOfLines={1}>by {item.author}</Text>
           <Text style={styles.bookPrice}>${item.price.toFixed(2)}</Text>
-          <Text style={styles.bookRating}>Avg Rating: {getAverageRating(item.id)}</Text>
+          
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={14} color="#F39C12" />
+            <Text style={styles.bookRating}>{getAverageRating(item.id)}</Text>
+          </View>
+          
           {userReview && (
-            <Text style={styles.userReview}>
-              Your Review: {userReview.rating}/5 - "{userReview.comment || 'No comment'}"
+            <Text style={styles.userReview} numberOfLines={1}>
+              Your rating: {userReview.rating}/5
             </Text>
           )}
-          <Text style={styles.bookStock}>Stock: {item.stock}</Text>
+          
+          <Text style={styles.bookStock}>{item.stock > 0 ? `${item.stock} in stock` : 'Out of stock'}</Text>
+          
           <TouchableOpacity
             style={[styles.addToCartButton, item.stock <= 0 && styles.outOfStockButton]}
             onPress={() => handleAddToCart(item)}
@@ -110,23 +118,32 @@ export default function UserHomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Header with Search */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.menuButton}>
-          <MaterialIcons name="menu" size={28} color="#000" />
+          <MaterialIcons name="menu" size={28} color="#2C3E50" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="#95A5A6" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search Books"
+            placeholder="Search by title or author"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#888"
+            placeholderTextColor="#95A5A6"
           />
-          <TouchableOpacity onPress={() => setShowFilters(true)} style={styles.filterButton}>
-            <Ionicons name="filter" size={20} color="#6200ee" />
+          <TouchableOpacity 
+            onPress={() => setShowFilters(true)} 
+            style={styles.filterButton}
+          >
+            <Ionicons name="options-outline" size={24} color="#3498DB" />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Categories */}
+      <View style={styles.categoriesHeader}>
+        <Text style={styles.sectionTitle}>Categories</Text>
       </View>
       <ScrollView
         horizontal
@@ -136,79 +153,115 @@ export default function UserHomeScreen({ navigation }) {
         {categories.map(category => (
           <TouchableOpacity
             key={category}
-            style={[styles.categoryButton, activeCategory === category && styles.activeCategoryButton]}
+            style={[
+              styles.categoryButton, 
+              activeCategory === category && styles.activeCategoryButton
+            ]}
             onPress={() => setActiveCategory(category)}
           >
-            <Text
-              style={[styles.categoryText, activeCategory === category && styles.activeCategoryText]}
-            >
+            <Text style={[
+              styles.categoryText,
+              activeCategory === category && styles.activeCategoryText
+            ]}>
               {category}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <Modal visible={showFilters} animationType="slide" transparent={true} onRequestClose={() => setShowFilters(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+
+      {/* Filter Modal */}
+      <Modal 
+        visible={showFilters} 
+        animationType="slide" 
+        transparent={true}
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filter Options</Text>
-              <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <Ionicons name="close" size={24} color="#6200ee" />
+              <TouchableOpacity 
+                onPress={() => setShowFilters(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#7F8C8D" />
               </TouchableOpacity>
             </View>
-            <View style={styles.filterSection}>
-              <Text style={styles.filterLabel}>Price Range</Text>
-              <View style={styles.priceRangeDisplay}>
-                <Text>${minPrice.toFixed(2)}</Text>
-                <Text> to </Text>
-                <Text>${maxPrice.toFixed(2)}</Text>
+            
+            <ScrollView style={styles.modalScrollContent}>
+              <View style={styles.filterSection}>
+                <Text style={styles.filterLabel}>Price Range</Text>
+                <View style={styles.priceRangeContainer}>
+                  <View style={styles.priceRangeValue}>
+                    <Text style={styles.priceText}>${minPrice.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.priceRangeDivider}>
+                    <Text style={styles.priceRangeDividerText}>to</Text>
+                  </View>
+                  <View style={styles.priceRangeValue}>
+                    <Text style={styles.priceText}>${maxPrice.toFixed(2)}</Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.sliderLabel}>Minimum Price</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={maxBookPrice}
+                  minimumTrackTintColor="#3498DB"
+                  maximumTrackTintColor="#ECF0F1"
+                  thumbTintColor="#3498DB"
+                  value={minPrice}
+                  onValueChange={(value) => setMinPrice(value)}
+                  step={1}
+                />
+                
+                <Text style={styles.sliderLabel}>Maximum Price</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={minPrice}
+                  maximumValue={maxBookPrice}
+                  minimumTrackTintColor="#3498DB"
+                  maximumTrackTintColor="#ECF0F1"
+                  thumbTintColor="#3498DB"
+                  value={maxPrice}
+                  onValueChange={(value) => setMaxPrice(value)}
+                  step={1}
+                />
               </View>
-              <Text style={styles.sliderLabel}>Max Price</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={maxBookPrice}
-                minimumTrackTintColor="#6200ee"
-                maximumTrackTintColor="#ccc"
-                thumbTintColor="#6200ee"
-                value={maxPrice}
-                onValueChange={(value) => setMaxPrice(value)}
-                step={1}
-              />
-              <Text style={styles.sliderLabel}>Min Price</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={maxPrice}
-                minimumTrackTintColor="#6200ee"
-                maximumTrackTintColor="#ccc"
-                thumbTintColor="#6200ee"
-                value={minPrice}
-                onValueChange={(value) => setMinPrice(value)}
-                step={1}
-              />
-            </View>
-            <View style={styles.filterButtons}>
-              <TouchableOpacity style={[styles.filterButton, styles.resetButton]} onPress={resetFilters}>
-                <Text style={styles.buttonText}>Reset Filters</Text>
+            </ScrollView>
+            
+            <View style={styles.filterActions}>
+              <TouchableOpacity 
+                style={styles.secondaryButton} 
+                onPress={resetFilters}
+              >
+                <Text style={styles.secondaryButtonText}>Reset All</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.filterButton, styles.applyButton]} onPress={() => setShowFilters(false)}>
-                <Text style={styles.buttonText}>Apply Filters</Text>
+              <TouchableOpacity 
+                style={styles.primaryButton}
+                onPress={() => setShowFilters(false)}
+              >
+                <Text style={styles.primaryButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-      <View style={styles.resultsContainer}>
+
+      {/* Results Header */}
+      <View style={styles.resultsHeader}>
         <Text style={styles.resultsText}>
-          {filteredBooks.length} {filteredBooks.length === 1 ? 'result' : 'results'} found
+          {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'} found
         </Text>
         {(activeCategory !== 'All' || minPrice > 0 || maxPrice < maxBookPrice || searchQuery) && (
           <TouchableOpacity onPress={resetFilters}>
-            <Text style={styles.clearFiltersText}>Clear filters</Text>
+            <Text style={styles.clearFiltersText}>Clear all</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Book List */}
       {filteredBooks.length > 0 ? (
         <FlatList
           data={filteredBooks}
@@ -217,14 +270,20 @@ export default function UserHomeScreen({ navigation }) {
           contentContainerStyle={styles.bookList}
           numColumns={2}
           columnWrapperStyle={styles.bookRow}
+          showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.noResultsContainer}>
-          <Ionicons name="search" size={50} color="#ccc" />
-          <Text style={styles.noResultsText}>No books found</Text>
-          <Text style={styles.noResultsSubText}>Try adjusting your search or filters</Text>
-          <TouchableOpacity style={styles.resetFiltersButton} onPress={resetFilters}>
-            <Text style={styles.resetFiltersButtonText}>Reset All Filters</Text>
+        <View style={styles.emptyState}>
+          <Ionicons name="search-outline" size={60} color="#BDC3C7" />
+          <Text style={styles.emptyStateTitle}>No books found</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Try adjusting your search or filter criteria
+          </Text>
+          <TouchableOpacity 
+            style={styles.emptyStateButton}
+            onPress={resetFilters}
+          >
+            <Text style={styles.emptyStateButtonText}>Reset Filters</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -233,51 +292,331 @@ export default function UserHomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  menuButton: { marginRight: 15 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 10, paddingHorizontal: 15, height: 40 },
-  searchIcon: { marginRight: 15 },
-  filterButton: { marginLeft: 10 },
-  searchInput: { flex: 1, height: '100%', color: '#333', fontSize: 16 },
-  categoriesContainer: { paddingHorizontal: 15, paddingVertical: 10 },
-  categoryButton: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 15, backgroundColor: '#f5f5f5', marginRight: 1, minWidth: 40, maxHeight: 35, alignItems: 'center' },
-  activeCategoryButton: { backgroundColor: '#6200ee' },
-  categoryText: { color: '#666', fontSize: 14 },
-  activeCategoryText: { color: '#fff' },
-  bookList: { padding: 15, paddingBottom: 20 },
-  bookRow: { justifyContent: 'space-between', marginBottom: 15 },
-  bookCard: { width: '48%', backgroundColor: '#fff', borderRadius: 10, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, marginBottom: 15, marginTop: -10 },
-  bookImage: { width: '100%', height: 200, resizeMode: 'cover' },
-  bookDetails: { padding: 12 },
-  bookTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: '#333' },
-  bookAuthor: { fontSize: 14, color: '#666', marginBottom: 4 },
-  bookPrice: { fontSize: 16, fontWeight: 'bold', color: '#6200ee', marginBottom: 4 },
-  bookRating: { fontSize: 14, color: '#666', marginBottom: 4 },
-  userReview: { fontSize: 12, color: '#888', marginBottom: 4, fontStyle: 'italic' },
-  bookStock: { fontSize: 14, color: '#666', marginBottom: 8 },
-  addToCartButton: { backgroundColor: '#6200ee', padding: 8, borderRadius: 4, alignItems: 'center' },
-  outOfStockButton: { backgroundColor: '#ccc' },
-  addToCartButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 30 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  filterSection: { marginBottom: 20 },
-  filterLabel: { fontSize: 16, fontWeight: '600', marginBottom: 10, color: '#333' },
-  sliderLabel: { fontSize: 14, color: '#666', marginBottom: 5 },
-  priceRangeDisplay: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  slider: { width: '100%', height: 40, marginBottom: 20 },
-  filterButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  filterButton: { padding: 12, borderRadius: 8, alignItems: 'center', width: '48%' },
-  resetButton: { backgroundColor: '#f5f5f5', borderWidth: 1, borderColor: '#ddd' },
-  applyButton: { backgroundColor: '#6200ee' },
-  resultsContainer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, paddingVertical: 10, alignItems: 'center' },
-  resultsText: { fontSize: 14, color: '#666' },
-  clearFiltersText: { fontSize: 14, color: '#6200ee', textDecorationLine: 'underline' },
-  noResultsContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  noResultsText: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 10 },
-  noResultsSubText: { fontSize: 14, color: '#666', marginTop: 5, textAlign: 'center' },
-  resetFiltersButton: { marginTop: 20, padding: 12, backgroundColor: '#6200ee', borderRadius: 8 },
-  resetFiltersButtonText: { color: '#fff', fontWeight: 'bold' },
+  // Container
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: 48,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECF0F1',
+  },
+  menuButton: {
+    marginRight: 16,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECF0F1',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    height: 48,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    color: '#2C3E50',
+    fontSize: 16,
+    fontFamily: 'System',
+  },
+  filterButton: {
+    marginLeft: 12,
+  },
+  
+  // Categories
+  categoriesHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 8,
+  },
+  categoriesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#ECF0F1',
+    marginRight: 8,
+    height: 36,
+    justifyContent: 'center',
+  },
+  activeCategoryButton: {
+    backgroundColor: '#f8c6a7',
+  },
+  categoryText: {
+    color: '#7F8C8D',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activeCategoryText: {
+    color: '#FFFFFF',
+  },
+  
+  // Results Header
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FA',
+  },
+  resultsText: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    fontWeight: '500',
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    color: '#3498DB',
+    fontWeight: '500',
+  },
+  
+  // Book List
+  bookList: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  bookRow: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  bookCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: 16,
+  },
+  bookImage: {
+    width: '100%',
+    height: 180,
+    resizeMode: 'cover',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  bookDetails: {
+    padding: 12,
+  },
+  bookTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#2C3E50',
+  },
+  bookAuthor: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginBottom: 8,
+  },
+  bookPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#f8c6a7',
+    marginBottom: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  bookRating: {
+    fontSize: 14,
+    color: '#F39C12',
+    marginLeft: 4,
+  },
+  userReview: {
+    fontSize: 12,
+    color: '#95A5A6',
+    marginBottom: 8,
+  },
+  bookStock: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 12,
+  },
+  addToCartButton: {
+    backgroundColor: '#f8c6a7',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outOfStockButton: {
+    backgroundColor: '#95A5A6',
+  },
+  addToCartButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  
+  // Filter Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECF0F1',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 24,
+  },
+  filterSection: {
+    paddingVertical: 16,
+  },
+  filterLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 16,
+  },
+  priceRangeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  priceRangeValue: {
+    backgroundColor: '#ECF0F1',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  priceRangeDivider: {
+    paddingHorizontal: 8,
+  },
+  priceRangeDividerText: {
+    color: '#7F8C8D',
+  },
+  priceText: {
+    color: '#2C3E50',
+    fontWeight: '600',
+  },
+  sliderLabel: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginBottom: 8,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+    marginBottom: 24,
+  },
+  filterActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#ECF0F1',
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#3498DB',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#ECF0F1',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  secondaryButtonText: {
+    color: '#7F8C8D',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  
+  // Empty State
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    color: '#7F8C8D',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  emptyStateButton: {
+    backgroundColor: '#3498DB',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });

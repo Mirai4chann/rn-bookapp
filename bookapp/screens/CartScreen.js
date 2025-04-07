@@ -116,7 +116,7 @@ export default function CartScreen({ navigation }) {
           <Text style={styles.emptyText}>Your cart is empty</Text>
           <TouchableOpacity 
             style={styles.continueShoppingButton}
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.navigate('UserHomeStack')}
           >
             <Text style={styles.continueShoppingText}>Browse Books</Text>
           </TouchableOpacity>
@@ -156,6 +156,7 @@ export default function CartScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
+    top: 20,
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',

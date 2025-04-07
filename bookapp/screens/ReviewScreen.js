@@ -52,11 +52,6 @@ export default function ReviewScreen({ route, navigation }) {
           ).unwrap();
         }
       }
-      // Fetch updated reviews after submission
-      await Promise.all([
-        dispatch(fetchUserReviews(userId)).unwrap(),
-        ...reviews.map(review => dispatch(fetchBookReviews(review.bookId)).unwrap()),
-      ]);
       alert('Reviews submitted successfully!');
       navigation.goBack();
     } catch (err) {

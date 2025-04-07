@@ -202,28 +202,28 @@ function CustomDrawerContent({ navigation }) {
         style={styles.drawerItem}
         onPress={() => navigation.navigate('UserHomeStack', { screen: 'Home' })}
       >
-        <Ionicons name="home" size={24} color="#6200ee" />
+        <Ionicons name="home" size={24} color="#f8c6a7" />
         <Text style={styles.drawerItemLabel}>Home</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.drawerItem}
         onPress={() => navigation.navigate('CartStack', { screen: 'Cart' })}
       >
-        <Ionicons name="cart" size={24} color="#6200ee" />
+        <Ionicons name="cart" size={24} color="#f8c6a7" />
         <Text style={styles.drawerItemLabel}>My Cart</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.drawerItem}
         onPress={() => navigation.navigate('Orders')}
       >
-        <Ionicons name="list" size={24} color="#6200ee" />
+        <Ionicons name="list" size={24} color="#f8c6a7" />
         <Text style={styles.drawerItemLabel}>My Orders</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.drawerItem}
         onPress={() => dispatch(logout())}
       >
-        <Ionicons name="log-out" size={24} color="#6200ee" />
+        <Ionicons name="log-out" size={24} color="#f8c6a7" />
         <Text style={styles.drawerItemLabel}>Logout</Text>
       </TouchableOpacity>
     </View>
@@ -297,13 +297,13 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 15,
     borderWidth: 2,
-    borderColor: '#6200ee',
+    borderColor: '#f8c6a7',
   },
   cameraIcon: {
     position: 'absolute',
     right: 5,
     bottom: 5,
-    backgroundColor: '#6200ee',
+    backgroundColor: '#f8c6a7',
     borderRadius: 15,
     padding: 5,
   },
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   profileButton: {
-    backgroundColor: '#6200ee',
+    backgroundColor: '#f8c6a7',
     padding: 10,
     borderRadius: 5,
     width: '100%',

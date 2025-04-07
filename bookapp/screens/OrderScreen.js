@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useSelector, useDispatch } from 'react-redux';
 import { checkout } from '../redux/cart';
@@ -28,7 +28,7 @@ export default function OrderScreen({ navigation }) {
     setLoading(true);
     try {
       const orderItems = cart.map(item => ({
-        book: { id: item.book.id }, // Consistent with cart structure
+        book: { id: item.book.id },
         quantity: item.quantity,
       }));
       const orderData = { userId, order_items: orderItems, totalPrice, payment_method: paymentMethod };
@@ -54,9 +54,12 @@ export default function OrderScreen({ navigation }) {
 
   const renderOrderItem = ({ item }) => (
     <View style={styles.orderItem}>
-      <Text>
+      <Text style={styles.itemText}>
         {item.book?.title || 'Unknown Book'} - $
         {(item.book?.price ?? 0).toFixed(2)} x {item.quantity}
+      </Text>
+      <Text style={styles.itemSubtotal}>
+        Subtotal: ${((item.book?.price ?? 0) * item.quantity).toFixed(2)}
       </Text>
     </View>
   );
@@ -65,7 +68,7 @@ export default function OrderScreen({ navigation }) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Order Summary</Text>
-        <Text style={styles.emptyText}>No items to display</Text>
+        <Text style={styles.emptyText}>Your cart is empty</Text>
       </View>
     );
   }
@@ -73,32 +76,48 @@ export default function OrderScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Order Summary</Text>
+      
       {loading ? (
-        <Text>Processing your order...</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Processing your order...</Text>
+        </View>
       ) : (
         <>
           <FlatList
             data={cart}
             renderItem={renderOrderItem}
             keyExtractor={(item) => item.book?.id?.toString() || Math.random().toString()}
+            contentContainerStyle={styles.listContainer}
           />
-          <Text style={styles.total}>Total: ${totalPrice.toFixed(2)}</Text>
-          <Text style={styles.label}>Payment Method:</Text>
-          <Picker
-            selectedValue={paymentMethod}
-            style={styles.picker}
-            onValueChange={(value) => setPaymentMethod(value)}
-            enabled={!loading}
-          >
-            <Picker.Item label="Cash on Delivery" value="Cash on Delivery" />
-            <Picker.Item label="Credit Card" value="Credit Card" />
-            <Picker.Item label="PayPal" value="PayPal" />
-          </Picker>
-          <Button
-            title={loading ? 'Placing Order...' : 'Place Order'}
-            onPress={handleFinalCheckout}
-            disabled={loading}
-          />
+          
+          <View style={styles.summaryContainer}>
+            <Text style={styles.total}>Total: ${totalPrice.toFixed(2)}</Text>
+            
+            <View style={styles.paymentContainer}>
+              <Text style={styles.label}>Payment Method:</Text>
+              <Picker
+                selectedValue={paymentMethod}
+                style={styles.picker}
+                onValueChange={(value) => setPaymentMethod(value)}
+                enabled={!loading}
+                dropdownIconColor="#666"
+              >
+                <Picker.Item label="Cash on Delivery" value="Cash on Delivery" />
+                <Picker.Item label="Credit Card" value="Credit Card" />
+                <Picker.Item label="PayPal" value="PayPal" />
+              </Picker>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.checkoutButton}
+              onPress={handleFinalCheckout}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? 'Placing Order...' : 'Place Order'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </>
       )}
     </View>
@@ -106,11 +125,98 @@ export default function OrderScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  orderItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' },
-  total: { fontSize: 20, marginVertical: 10, textAlign: 'center' },
-  label: { fontSize: 16, marginBottom: 5 },
-  picker: { height: 200, width: '100%', marginBottom: 40 },
-  emptyText: { fontSize: 18, textAlign: 'center' },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  orderItem: {
+    padding: 15,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  itemText: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 5,
+  },
+  itemSubtotal: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  summaryContainer: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  total: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginVertical: 10,
+    textAlign: 'center',
+    color: '#333',
+  },
+  paymentContainer: {
+    marginVertical: 15,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#555',
+  },
+  picker: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+  },
+  checkoutButton: {
+    backgroundColor: '#f8c6a7',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  emptyText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#666',
+  },
 });

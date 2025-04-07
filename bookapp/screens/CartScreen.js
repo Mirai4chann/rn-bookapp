@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { increaseQuantity, decreaseQuantity, removeFromCart, fetchCart } from '../redux/cart';
 
 export default function CartScreen({ navigation }) {
-  const { cart, error } = useSelector((state) => state.cart);
+  const { cart, error, status } = useSelector((state) => state.cart);
   const { userId } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -12,7 +12,16 @@ export default function CartScreen({ navigation }) {
   useEffect(() => {
     if (userId) {
       setLoading(true);
-      dispatch(fetchCart(userId)).then(() => setLoading(false)).catch(() => setLoading(false));
+      console.log(`[CartScreen] Fetching cart for userId=${userId}`);
+      dispatch(fetchCart(userId))
+        .then((result) => {
+          console.log('[CartScreen] Cart fetch result:', result.payload);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('[CartScreen] Cart fetch error:', err);
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
@@ -34,22 +43,39 @@ export default function CartScreen({ navigation }) {
     navigation.navigate('Order');
   };
 
-  const renderCartItem = ({ item }) => (
-    <View style={styles.cartItem}>
-      <Text>{item.book.title || 'Unknown Book'} - ${item.book.price?.toFixed(2) || 'N/A'} x {item.quantity}</Text>
-      <View style={styles.controls}>
-        <Button title="-" onPress={() => handleDecrease(item.book.id)} disabled={item.quantity <= 1} />
-        <Text style={styles.quantity}>{item.quantity}</Text>
-        <Button title="+" onPress={() => handleIncrease(item.book.id)} disabled={item.quantity >= (item.book.stock || Infinity)} />
-        <Button title="Delete" onPress={() => handleRemove(item.book.id)} />
+  const renderCartItem = ({ item }) => {
+    console.log('[CartScreen] Rendering cart item:', item);
+    return (
+      <View style={styles.cartItem}>
+        <Text>{item.book?.title || 'Unknown Book'} - ${item.book?.price?.toFixed(2) || 'N/A'} x {item.quantity}</Text>
+        <View style={styles.controls}>
+          <Button title="-" onPress={() => handleDecrease(item.book.id)} disabled={item.quantity <= 1} />
+          <Text style={styles.quantity}>{item.quantity}</Text>
+          <Button title="+" onPress={() => handleIncrease(item.book.id)} disabled={item.quantity >= (item.book?.stock || Infinity)} />
+          <Button title="Delete" onPress={() => handleRemove(item.book.id)} />
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
-  const totalPrice = cart.reduce((sum, item) => sum + (item.book.price || 0) * item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + (item.book?.price || 0) * item.quantity, 0);
 
-  if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#0000ff" /><Text>Loading cart...</Text></View>;
-  if (error) return <View style={styles.container}><Text>Error: {error}</Text><Button title="Retry" onPress={() => dispatch(fetchCart(userId))} /></View>;
+  if (loading || status === 'loading') {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading cart...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text>Error: {error}</Text>
+        <Button title="Retry" onPress={() => dispatch(fetchCart(userId))} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -58,7 +84,12 @@ export default function CartScreen({ navigation }) {
         <Text style={styles.emptyText}>Your cart is empty</Text>
       ) : (
         <>
-          <FlatList data={cart} renderItem={renderCartItem} keyExtractor={(item) => item.book.id.toString()} style={styles.list} />
+          <FlatList
+            data={cart}
+            renderItem={renderCartItem}
+            keyExtractor={(item) => item.book.id.toString()}
+            style={styles.list}
+          />
           <Text style={styles.total}>Total: ${totalPrice.toFixed(2)}</Text>
           <Button title="Proceed to Checkout" onPress={handleCheckout} disabled={cart.length === 0} />
         </>

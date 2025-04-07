@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, Button, StyleSheet } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { createReview } from '../redux/reviews';
@@ -7,61 +7,89 @@ export default function ReviewScreen({ route, navigation }) {
   const { order } = route.params;
   const { userId } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const [reviews, setReviews] = useState(order.order_items.map(item => ({
-    bookId: item.book.id,
-    rating: 0,
-    comment: '',
-  })));
+  const [reviews, setReviews] = useState(
+    order.order_items.map(item => ({
+      bookId: Number(item.book.id), // Convert string to number
+      rating: 0,
+      comment: '',
+    }))
+  );
+
+  // Log data for debugging
+  useEffect(() => {
+    console.log('[ReviewScreen] Order items:', JSON.stringify(order.order_items, null, 2));
+    console.log('[ReviewScreen] Initial reviews:', JSON.stringify(reviews, null, 2));
+  }, [order.order_items, reviews]);
 
   const handleRatingChange = (bookId, rating) => {
-    setReviews(reviews.map(review => 
-      review.bookId === bookId ? { ...review, rating } : review
-    ));
+    setReviews(prevReviews =>
+      prevReviews.map(review =>
+        review.bookId === bookId ? { ...review, rating } : review
+      )
+    );
   };
 
   const handleCommentChange = (bookId, comment) => {
-    setReviews(reviews.map(review => 
-      review.bookId === bookId ? { ...review, comment } : review
-    ));
+    setReviews(prevReviews =>
+      prevReviews.map(review =>
+        review.bookId === bookId ? { ...review, comment } : review
+      )
+    );
   };
 
   const handleSubmit = async () => {
     try {
       for (const review of reviews) {
         if (review.rating > 0) {
-          await dispatch(createReview({
-            orderId: order.id,
-            userId,
-            bookId: review.bookId,
-            rating: review.rating,
-            comment: review.comment || '',
-          })).unwrap();
+          await dispatch(
+            createReview({
+              orderId: order.id,
+              userId,
+              bookId: review.bookId,
+              rating: review.rating,
+              comment: review.comment || '',
+            })
+          ).unwrap();
         }
       }
+      // Fetch updated reviews after submission
+      await Promise.all([
+        dispatch(fetchUserReviews(userId)).unwrap(),
+        ...reviews.map(review => dispatch(fetchBookReviews(review.bookId)).unwrap()),
+      ]);
       alert('Reviews submitted successfully!');
       navigation.goBack();
     } catch (err) {
+      console.error('[ReviewScreen] Submit failed:', err);
       alert(`Failed to submit reviews: ${err.message || 'Unknown error'}`);
     }
   };
 
   const renderReviewItem = ({ item }) => {
-    const review = reviews.find(r => r.bookId === item.book.id);
+    const bookId = Number(item.book.id);
+    const review = reviews.find(r => r.bookId === bookId) || { rating: 0, comment: '' }; // Fallback if not found
+    console.log(`[ReviewScreen] Rendering bookId=${bookId}, review=`, review);
+
     return (
       <View style={styles.reviewItem}>
-        <Text>{item.book.title}</Text>
+        <Text>{item.book?.title || `Book ID: ${item.book.id}`}</Text>
         <Text>Rating (1-5):</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
           value={review.rating.toString()}
-          onChangeText={(text) => handleRatingChange(item.book.id, Math.min(5, Math.max(1, parseInt(text) || 0)))}
+          onChangeText={(text) =>
+            handleRatingChange(
+              bookId,
+              Math.min(5, Math.max(1, parseInt(text) || 0))
+            )
+          }
         />
         <Text>Comment:</Text>
         <TextInput
           style={styles.input}
           value={review.comment}
-          onChangeText={(text) => handleCommentChange(item.book.id, text)}
+          onChangeText={(text) => handleCommentChange(bookId, text)}
           multiline
         />
       </View>

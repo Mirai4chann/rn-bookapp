@@ -18,7 +18,7 @@ export default function OrderScreen({ navigation }) {
     return null;
   }
 
-  const totalPrice = cart.reduce((sum, item) => sum + (item.book.price || 0) * item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + (item.book?.price || 0) * item.quantity, 0);
 
   const handleFinalCheckout = async () => {
     if (cart.length === 0) {
@@ -28,8 +28,8 @@ export default function OrderScreen({ navigation }) {
     setLoading(true);
     try {
       const orderItems = cart.map(item => ({
-        book: { id: item.book._id }, // Simplified book object with just id
-        quantity: item.quantity
+        book: { id: item.book.id }, // Consistent with cart structure
+        quantity: item.quantity,
       }));
       const orderData = { userId, order_items: orderItems, totalPrice, payment_method: paymentMethod };
       console.log('Order data being sent:', JSON.stringify(orderData, null, 2));
@@ -44,7 +44,6 @@ export default function OrderScreen({ navigation }) {
         message: err.message,
         status: err.response?.status,
         data: err.response?.data,
-        request: err.request ? 'Request sent, no response' : 'No request sent'
       });
       const errorMessage = err.response?.data?.error || err.message || 'Unknown error';
       alert(`Checkout failed: ${errorMessage}`);
@@ -55,27 +54,53 @@ export default function OrderScreen({ navigation }) {
 
   const renderOrderItem = ({ item }) => (
     <View style={styles.orderItem}>
-      <Text>{item.book.title} - ${item.book.price.toFixed(2)} x {item.quantity}</Text>
+      <Text>
+        {item.book?.title || 'Unknown Book'} - $
+        {(item.book?.price ?? 0).toFixed(2)} x {item.quantity}
+      </Text>
     </View>
   );
+
+  if (cart.length === 0 && !loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Order Summary</Text>
+        <Text style={styles.emptyText}>No items to display</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Order Summary</Text>
-      <FlatList data={cart} renderItem={renderOrderItem} keyExtractor={(item) => item.book._id.toString()} />
-      <Text style={styles.total}>Total: ${totalPrice.toFixed(2)}</Text>
-      <Text style={styles.label}>Payment Method:</Text>
-      <Picker
-        selectedValue={paymentMethod}
-        style={styles.picker}
-        onValueChange={(value) => setPaymentMethod(value)}
-        enabled={!loading}
-      >
-        <Picker.Item label="Cash on Delivery" value="Cash on Delivery" />
-        <Picker.Item label="Credit Card" value="Credit Card" />
-        <Picker.Item label="PayPal" value="PayPal" />
-      </Picker>
-      <Button title={loading ? 'Placing Order...' : 'Place Order'} onPress={handleFinalCheckout} disabled={loading} />
+      {loading ? (
+        <Text>Processing your order...</Text>
+      ) : (
+        <>
+          <FlatList
+            data={cart}
+            renderItem={renderOrderItem}
+            keyExtractor={(item) => item.book?.id?.toString() || Math.random().toString()}
+          />
+          <Text style={styles.total}>Total: ${totalPrice.toFixed(2)}</Text>
+          <Text style={styles.label}>Payment Method:</Text>
+          <Picker
+            selectedValue={paymentMethod}
+            style={styles.picker}
+            onValueChange={(value) => setPaymentMethod(value)}
+            enabled={!loading}
+          >
+            <Picker.Item label="Cash on Delivery" value="Cash on Delivery" />
+            <Picker.Item label="Credit Card" value="Credit Card" />
+            <Picker.Item label="PayPal" value="PayPal" />
+          </Picker>
+          <Button
+            title={loading ? 'Placing Order...' : 'Place Order'}
+            onPress={handleFinalCheckout}
+            disabled={loading}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -87,4 +112,5 @@ const styles = StyleSheet.create({
   total: { fontSize: 20, marginVertical: 10, textAlign: 'center' },
   label: { fontSize: 16, marginBottom: 5 },
   picker: { height: 200, width: '100%', marginBottom: 40 },
+  emptyText: { fontSize: 18, textAlign: 'center' },
 });

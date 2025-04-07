@@ -5,25 +5,30 @@ import { BASE_URL } from '../src/config/apiConfig';
 export const fetchCart = createAsyncThunk('cart/fetchCart', async (userId, { rejectWithValue }) => {
   try {
     const response = await axios.get(`${BASE_URL}/cart/${userId}`);
+    console.log(`[fetchCart] Fetched cart for userId=${userId}:`, response.data);
     return response.data;
   } catch (error) {
+    console.error(`[fetchCart] Error fetching cart for userId=${userId}:`, error.message);
     return rejectWithValue(error.response?.data?.error || 'Error fetching cart');
   }
 });
 
 export const addToCart = createAsyncThunk('cart/addToCart', async ({ userId, book }, { dispatch, rejectWithValue }) => {
   try {
-    const bookId = parseInt(book.id); // Adjust if SQLite uses TEXT
-    await axios.post(`${BASE_URL}/cart`, { userId, bookId, quantity: 1 });
-    return await dispatch(fetchCart(userId)).unwrap();
+    const bookId = book.id.toString(); // Ensure consistent type
+    const response = await axios.post(`${BASE_URL}/cart`, { userId, bookId, quantity: 1 });
+    console.log(`[addToCart] Added bookId=${bookId} to cart for userId=${userId}:`, response.data);
+    const updatedCart = await dispatch(fetchCart(userId)).unwrap();
+    return updatedCart;
   } catch (error) {
+    console.error(`[addToCart] Error adding to cart for userId=${userId}:`, error.message);
     return rejectWithValue(error.response?.data?.error || 'Error adding to cart');
   }
 });
 
 export const increaseQuantity = createAsyncThunk('cart/increaseQuantity', async ({ userId, bookId }, { getState, dispatch, rejectWithValue }) => {
   const { cart } = getState().cart;
-  const item = cart.find((i) => i.book.id === bookId);
+  const item = cart.find((i) => i.book.id.toString() === bookId.toString());
   if (!item) return rejectWithValue('Item not found in cart');
   if (item.quantity >= item.book.stock) return rejectWithValue('Cannot exceed stock limit');
   try {
@@ -37,7 +42,7 @@ export const increaseQuantity = createAsyncThunk('cart/increaseQuantity', async 
 
 export const decreaseQuantity = createAsyncThunk('cart/decreaseQuantity', async ({ userId, bookId }, { getState, dispatch, rejectWithValue }) => {
   const { cart } = getState().cart;
-  const item = cart.find((i) => i.book.id === bookId);
+  const item = cart.find((i) => i.book.id.toString() === bookId.toString());
   if (!item) return rejectWithValue('Item not found in cart');
   if (item.quantity <= 1) return rejectWithValue('Quantity cannot be less than 1');
   try {
@@ -61,12 +66,11 @@ export const removeFromCart = createAsyncThunk('cart/removeFromCart', async ({ u
 export const checkout = createAsyncThunk('cart/checkout', async (userId, { dispatch, rejectWithValue }) => {
   try {
     const response = await axios.delete(`${BASE_URL}/cart/${userId}`);
-    console.log('Checkout API response:', response.data);
+    console.log('[checkout] Checkout response:', response.data);
     const updatedCart = await dispatch(fetchCart(userId)).unwrap();
-    return updatedCart; // Should return empty array
+    return updatedCart;
   } catch (error) {
-    console.error('Checkout error (logged but not rejected):', error.message);
-    // Force cart clear even on error
+    console.error('[checkout] Checkout error:', error.message);
     const updatedCart = await dispatch(fetchCart(userId)).unwrap();
     return updatedCart;
   }
